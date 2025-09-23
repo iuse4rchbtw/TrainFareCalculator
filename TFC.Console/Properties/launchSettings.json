@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TFC.Console": {
+      "commandName": "Project",
+      "commandLineArgs": ".",
+      "workingDirectory": "$(SolutionDir)\\Fares"
+    }
+  }
+}
