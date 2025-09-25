@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TFC.GUI.MainPage">
+
+    <VerticalStackLayout Padding="12" Spacing="24">
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <VerticalStackLayout Spacing="4" Grid.Column="0">
+                <Label>Transit Line</Label>
+                <Picker/>
+            </VerticalStackLayout>
+            <VerticalStackLayout Spacing="4" Grid.Column="1">
+                <Label>Station</Label>
+                <Picker/>
+            </VerticalStackLayout>
+        </Grid>
+        <VerticalStackLayout Spacing="4">
+            <Label>Payment Method</Label>
+            <VerticalStackLayout>
+                <RadioButton Content="Stored-Value Card (beep™ card)" IsChecked="True"/>
+                <RadioButton Content="Single Journey Ticket"/>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+        <Button Text="Calculate Fare"/>
+        <Label Text="$0.00" FontSize="26"></Label>
+    </VerticalStackLayout>
+</ContentPage>
