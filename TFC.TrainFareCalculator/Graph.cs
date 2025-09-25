@@ -35,17 +35,26 @@ public class Graph
         Adjacency[from][to] = new FareInfo(0, 0);
     }
 
+    // Back-compat: returns only the totals, without the path.
     public FareInfo FindShortestPath(StationId from, StationId to)
     {
-        var sjt = FindShortestPath(from, to, fi => fi.SjtFare);
-        var svc = FindShortestPath(from, to, fi => fi.SvcFare);
+        var sjt = FindShortestPathInternal(from, to, fi => fi.SjtFare);
+        var svc = FindShortestPathInternal(from, to, fi => fi.SvcFare);
 
-        return new FareInfo(sjt, svc);
+        return new FareInfo(sjt.Total, svc.Total);
     }
 
-    // Overload to choose fare type (e.g., fi => fi.SjtFare)
-    // Dijkstra's algorithm
-    private decimal FindShortestPath(StationId from, StationId to, Func<FareInfo, decimal> weightSelector)
+    // New: returns both SJT and SVC paths and totals.
+    public (PathResult Sjt, PathResult Svc) FindShortestPathsWithPath(StationId from, StationId to)
+    {
+        var sjt = FindShortestPathInternal(from, to, fi => fi.SjtFare);
+        var svc = FindShortestPathInternal(from, to, fi => fi.SvcFare);
+        return (sjt, svc);
+    }
+
+
+    // Dijkstra with path reconstruction for a chosen fare metric
+    private PathResult FindShortestPathInternal(StationId from, StationId to, Func<FareInfo, decimal> weightSelector)
     {
         if (!Adjacency.ContainsKey(from))
             throw new InvalidOperationException(
@@ -55,12 +64,17 @@ public class Graph
             throw new InvalidOperationException(
                 $"Station {to.Station} on line {to.TransitLine} does not exist in the graph.");
 
-        if (from.Equals(to)) return 0m;
+        if (from.Equals(to))
+            return new PathResult(0m, new List<StationId> { from });
 
-        // Dijkstra: min-priority queue by total cost
-        var distances = new Dictionary<StationId, decimal>();
+        var distances = new Dictionary<StationId, decimal>(Adjacency.Count);
+        var prev = new Dictionary<StationId, StationId?>(Adjacency.Count);
+
         foreach (var v in Adjacency.Keys)
+        {
             distances[v] = decimal.MaxValue;
+            prev[v] = null;
+        }
         distances[from] = 0m;
 
         var pq = new PriorityQueue<StationId, decimal>();
@@ -74,7 +88,10 @@ public class Graph
                 continue;
 
             if (u.Equals(to))
-                return distU;
+            {
+                var path = ReconstructPath(prev, from, to);
+                return new PathResult(distU, path);
+            }
 
             if (!Adjacency.TryGetValue(u, out var neighbors))
                 continue;
@@ -89,10 +106,30 @@ public class Graph
                     continue;
 
                 distances[v] = alt;
+                prev[v] = u;
                 pq.Enqueue(v, alt);
             }
         }
 
         throw new InvalidOperationException($"No path found from {from} to {to}.");
+    }
+
+    private static List<StationId> ReconstructPath(Dictionary<StationId, StationId?> prev, StationId from, StationId to)
+    {
+        var path = new List<StationId>();
+        var current = to;
+
+        // Walk backwards from destination to source
+        while (!current.Equals(from))
+        {
+            path.Add(current);
+            if (!prev.TryGetValue(current, out var p) || p is null)
+                break; // no path
+            current = p;
+        }
+
+        path.Add(from);
+        path.Reverse();
+        return path;
     }
 }
