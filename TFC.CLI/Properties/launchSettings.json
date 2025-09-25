@@ -3,7 +3,7 @@
     "TFC.CLI": {
       "commandName": "Project",
       "commandLineArgs": "directory.json",
-      "workingDirectory": "C:\\Users\\Kian\\Documents\\train fares\\"
+      "workingDirectory": "$(SolutionDir)\\Fares"
     }
   }
 }

@@ -1,4 +1,0 @@
-Araneta–Cubao,YL,Cubao,PL
-Taft Avenue,YL,EDSA,GL
-North Avenue,YL,Fernando Poe Jr.,GL
-Recto,PL,Doroteo Jose,GL

@@ -1,0 +1,8 @@
+{
+  "matrixPaths": [
+    "matrices/lrt1.json",
+    "matrices/lrt2.json",
+    "matrices/mrt3.json"
+  ],
+  "transfersPath": "transfers.json"
+}

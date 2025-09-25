@@ -1,31 +1,59 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pm="clr-namespace:TFC.GUI.PageModels"
              x:Class="TFC.GUI.MainPage">
-
+    <ContentPage.BindingContext>
+        <pm:MainPageModel/>
+    </ContentPage.BindingContext>
     <VerticalStackLayout Padding="12" Spacing="24">
         <Grid ColumnSpacing="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <VerticalStackLayout Spacing="4" Grid.Column="0">
-                <Label>Transit Line</Label>
-                <Picker/>
+            <VerticalStackLayout Spacing="6" Grid.Column="0">
+                <Label FontSize="18">Transit Line</Label>
+                <Picker ItemsSource="{Binding TransitLines}"
+                        SelectedIndex="{Binding SelectedFromTransitLineIdx,Mode=TwoWay}"
+                        Title="From"/>
+                <Picker ItemsSource="{Binding TransitLines}" 
+                        SelectedIndex="{Binding SelectedToTransitLineIdx,Mode=TwoWay}"
+                        Title="To"/>
             </VerticalStackLayout>
-            <VerticalStackLayout Spacing="4" Grid.Column="1">
-                <Label>Station</Label>
-                <Picker/>
+            <VerticalStackLayout Spacing="6" Grid.Column="1">
+                <Label FontSize="18">Station</Label>
+                <Picker ItemsSource="{Binding FromStations}" 
+                        SelectedIndex="{Binding SelectedFromStationIdx,Mode=TwoWay}"
+                        Title="From"/>
+                <Picker ItemsSource="{Binding ToStations}" 
+                        SelectedIndex="{Binding SelectedToStationIdx,Mode=TwoWay}"
+                        Title="To"/>
             </VerticalStackLayout>
         </Grid>
         <VerticalStackLayout Spacing="4">
             <Label>Payment Method</Label>
             <VerticalStackLayout>
-                <RadioButton Content="Stored-Value Card (beep™ card)" IsChecked="True"/>
+                <RadioButton Content="Stored-Value Card (beep™ card)"
+                             IsChecked="{Binding IsStoredValueCard,Mode=TwoWay}"/>
                 <RadioButton Content="Single Journey Ticket"/>
             </VerticalStackLayout>
         </VerticalStackLayout>
-        <Button Text="Calculate Fare"/>
-        <Label Text="$0.00" FontSize="26"></Label>
+        <Button Text="Calculate Fare" IsEnabled="{Binding IsDataComplete}"
+                Command="{Binding CalculateFareCommand}"/>
+        <VerticalStackLayout IsVisible="{Binding IsCalculationComplete}">
+            <Label TextType="Html" FontSize="22">
+                <Label.Text>
+                    <MultiBinding StringFormat="Fare from &lt;b&gt;{0} {1}&lt;/b&gt; to &lt;b&gt;{2} {3}&lt;/b&gt;" >
+                        <Binding Path="SelectedFromTransitLine"/>
+                        <Binding Path="SelectedFromStationName"/>
+                        <Binding Path="SelectedToTransitLine"/>
+                        <Binding Path="SelectedToStationName"/>
+                    </MultiBinding>
+                </Label.Text>
+            </Label>
+            <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}" 
+                   FontSize="32"/>
+        </VerticalStackLayout>
     </VerticalStackLayout>
 </ContentPage>

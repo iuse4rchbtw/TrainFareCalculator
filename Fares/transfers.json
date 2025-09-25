@@ -1,0 +1,42 @@
+[
+  {
+    "from": {
+      "transitLine": "LRT-1",
+      "code": "GL11"
+    },
+    "to": {
+      "transitLine": "LRT-2",
+      "code": "PL13"
+    }
+  },
+  {
+    "from": {
+      "transitLine": "LRT-2",
+      "code": "PL06"
+    },
+    "to": {
+      "transitLine": "MRT-3",
+      "code": "YL04"
+    }
+  },
+  {
+    "from": {
+      "transitLine": "MRT-3",
+      "code": "YL13"
+    },
+    "to": {
+      "transitLine": "LRT-1",
+      "code": "GL20"
+    }
+  },
+  {
+    "from": {
+      "transitLine": "LRT-1",
+      "code": "GL02"
+    },
+    "to": {
+      "transitLine": "MRT-3",
+      "code": "YL01"
+    }
+  }
+]

@@ -14,9 +14,10 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="$(MSBuildThisFileDirectory)GL.txt" />
-    <Text Include="$(MSBuildThisFileDirectory)PL.txt" />
-    <Text Include="$(MSBuildThisFileDirectory)transfers.txt" />
-    <Text Include="$(MSBuildThisFileDirectory)YL.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)directory.json" />
+    <Content Include="$(MSBuildThisFileDirectory)matrices\lrt1.json" />
+    <Content Include="$(MSBuildThisFileDirectory)matrices\lrt2.json" />
+    <Content Include="$(MSBuildThisFileDirectory)matrices\mrt3.json" />
+    <Content Include="$(MSBuildThisFileDirectory)transfers.json" />
   </ItemGroup>
 </Project>

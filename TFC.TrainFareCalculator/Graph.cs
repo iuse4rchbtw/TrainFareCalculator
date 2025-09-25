@@ -52,7 +52,7 @@ public class Graph
     public record PathResult(decimal Total, IReadOnlyList<Station> Path);
 
     // Compute independent SJT & SVC minimal paths.
-    public (PathResult Sjt, PathResult Svc) FindShortestPaths(
+    public (PathResult SingleJourneyTicket, PathResult StoredValueCard) FindShortestPaths(
         Station from,
         Station to)
     {
