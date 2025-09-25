@@ -120,7 +120,7 @@ public class Graph
             $"No path found between {_nodes[source]} and {_nodes[target]}");
     }
 
-    private IReadOnlyList<Station> ReconstructPath(int[] prev, int source, int target)
+    private List<Station> ReconstructPath(int[] prev, int source, int target)
     {
         var stack = new Stack<Station>();
         var cur = target;

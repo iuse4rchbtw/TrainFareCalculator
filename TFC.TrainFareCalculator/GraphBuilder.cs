@@ -12,7 +12,7 @@ public static class GraphBuilder
 {
     public static Graph Build(Directory directory)
     {
-        if (directory is null) throw new ArgumentNullException(nameof(directory));
+        ArgumentNullException.ThrowIfNull(directory);
         var graph = new Graph();
 
         // 1. Add all intra-line edges from matrices
@@ -56,7 +56,7 @@ public static class GraphBuilder
 
     private static void AddMatrix(Graph graph, Matrix matrix)
     {
-        if (matrix is null) throw new ArgumentNullException(nameof(matrix));
+        ArgumentNullException.ThrowIfNull(matrix);
         if (string.IsNullOrWhiteSpace(matrix.TransitLine))
             throw new InvalidDataException("Matrix.LineCode is required (e.g. \"YL\", \"PL\", \"GL\").");
         if (matrix.Stations is null || matrix.Stations.Count == 0)
