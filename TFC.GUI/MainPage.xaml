@@ -55,6 +55,9 @@
             </Label>
             <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}" 
                    FontSize="32"/>
+            
+            <Label Margin="0,12,0,0" 
+                   Text="{Binding CalculatedPath}"/>
         </VerticalStackLayout>
     </VerticalStackLayout>
 </ContentPage>

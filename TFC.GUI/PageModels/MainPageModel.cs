@@ -78,6 +78,7 @@ public partial class MainPageModel
     private Graph _graph;
     
     public decimal CalculatedFare { get; private set; }
+    public string CalculatedPath { get; set; } = "";
     public bool IsDataComplete =>
         SelectedFromTransitLineIdx != -1 &&
         SelectedToTransitLineIdx != -1 &&
@@ -122,6 +123,7 @@ public partial class MainPageModel
             new Station(toStation.TransitLine, toStation.Code, toStation.Name));
         
         CalculatedFare = IsStoredValueCard ? fareInfo.StoredValueCard.Total : fareInfo.SingleJourneyTicket.Total;
+        CalculatedPath = string.Join(" ➤ ", IsStoredValueCard ? fareInfo.StoredValueCard.Path : fareInfo.SingleJourneyTicket.Path);
         IsCalculationComplete = true;
     }
 }
