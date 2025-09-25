@@ -1,157 +1,138 @@
-﻿namespace TFC.TrainFareCalculator;
+namespace TFC.TrainFareCalculator;
 
 public class Graph
 {
-    // Adjacency list:
-    //   Key:   StationId (origin)
-    //   Value: Dictionary where:
-    //              Key   = neighboring StationId (destination)
-    //              Value = FareInfo (edge weight(s): SJT + SVC)
-    private Dictionary<StationId, Dictionary<StationId, FareInfo>> Adjacency { get; } = [];
+    // Stored nodes (index -> key)
+    private readonly List<Station> _nodes = [];
+    // Reverse lookup (key -> index)
+    private readonly Dictionary<Station, int> _indexByKey = [];
+    // Adjacency list: index -> (neighborIndex -> FareInfo)
+    private readonly List<Dictionary<int, FareInfo>> _adjacency = [];
 
-    public void AddEdge(StationId from, StationId to, FareInfo fareInfo)
+    // Thread-safe if needed for parallel build (optional)
+    private readonly object _sync = new();
+
+    // Adds (or reuses) a node and returns its index.
+    private int GetOrAddNode(Station id)
     {
-        if (!Adjacency.ContainsKey(from))
-            Adjacency[from] = [];
-            
-        Adjacency[from][to] = fareInfo;
+        if (_indexByKey.TryGetValue(id, out var existing))
+            return existing;
 
-        if (!Adjacency.ContainsKey(to))
-            Adjacency[to] = [];
+        lock (_sync)
+        {
+            if (_indexByKey.TryGetValue(id, out existing))
+                return existing;
 
-        Adjacency[to][from] = fareInfo; // Assuming undirected graph
+            var index = _nodes.Count;
+            _nodes.Add(id);
+            _indexByKey[id] = index;
+            _adjacency.Add(new Dictionary<int, FareInfo>());
+            return index;
+        }
     }
 
-    public void AddTransfer(StationId from, StationId to)
+    // Ensure node exists without returning index (optional convenience)
+    public void EnsureNode(Station id) => GetOrAddNode(id);
+
+    // Add or update an undirected edge.
+    public void AddEdge(Station from, Station to,
+                        FareInfo fareInfo)
     {
-        // Transfers have no fare associated
-        // BUT check if nodes exist before adding links
+        var a = GetOrAddNode(from);
+        var b = GetOrAddNode(to);
 
-        if (!Adjacency.ContainsKey(from))
-            throw new InvalidOperationException(
-                $"Station {from.Station} on line {from.TransitLine} does not exist in the graph.");
-
-        if (!Adjacency.ContainsKey(to))
-            throw new InvalidOperationException(
-                $"Station {to.Station} on line {to.TransitLine} does not exist in the graph.");
-
-        // Bi‑directional zero cost (transfer)
-        Adjacency[to][from] = new FareInfo(0, 0);
-        Adjacency[from][to] = new FareInfo(0, 0);
+        _adjacency[a][b] = fareInfo;
+        _adjacency[b][a] = fareInfo;
     }
 
-    public record PathResult(decimal Total, IReadOnlyList<StationId> Path);
+    // Zero-fare transfer (bi-directional).
+    public void AddTransfer(Station from, Station to)
+        => AddEdge(from, to, new FareInfo(0, 0));
 
-    /// <summary>
-    /// Computes shortest paths (and totals) for SJT and SVC independently.
-    /// </summary>
-    public (PathResult Sjt, PathResult Svc) FindShortestPaths(StationId from, StationId to)
+    public record PathResult(decimal Total, IReadOnlyList<Station> Path);
+
+    // Compute independent SJT & SVC minimal paths.
+    public (PathResult Sjt, PathResult Svc) FindShortestPaths(
+        Station from,
+        Station to)
     {
-        var sjt = FindShortestPathInternal(from, to, fi => fi.SjtFare);
-        var svc = FindShortestPathInternal(from, to, fi => fi.SvcFare);
+        var fromIdx = ResolveIndex(from);
+        var toIdx   = ResolveIndex(to);
+
+        var sjt = Dijkstra(fromIdx, toIdx, fi => fi.SingleJourneyTicket);
+        var svc = Dijkstra(fromIdx, toIdx, fi => fi.StoredValueCard);
         return (sjt, svc);
     }
 
-    /// <summary>
-    /// Dijkstra's algorithm with path reconstruction for a chosen fare metric.
-    /// Runtime: O((V + E) log V) using a binary heap (PriorityQueue).
-    /// </summary>
-    /// <param name="from">Source station.</param>
-    /// <param name="to">Destination station.</param>
-    /// <param name="weightSelector">Selector choosing which fare (SJT/SVC) to minimize.</param>
-    /// <returns>PathResult containing total cost and ordered list of stations.</returns>
-    /// <exception cref="InvalidOperationException">If stations are missing or no path exists.</exception>
-    private PathResult FindShortestPathInternal(StationId from, StationId to, Func<FareInfo, decimal> weightSelector)
+    private int ResolveIndex(Station id)
     {
-        // Validate endpoints exist in the graph.
-        if (!Adjacency.ContainsKey(from))
-            throw new InvalidOperationException(
-                $"Station {from.Station} on line {from.TransitLine} does not exist in the graph.");
+        return _indexByKey.TryGetValue(id, out var idx)
+            ? idx
+            : throw new InvalidOperationException($"Station not found: {id}");
+    }
 
-        if (!Adjacency.ContainsKey(to))
-            throw new InvalidOperationException(
-                $"Station {to.Station} on line {to.TransitLine} does not exist in the graph.");
-
-        // Trivial case: same station.
-        if (from.Equals(to))
-            return new PathResult(0m, new List<StationId> { from });
-
-        // Distance map initialized to +∞ (decimal.MaxValue).
-        var distances = new Dictionary<StationId, decimal>(Adjacency.Count);
-        // Predecessor map for path reconstruction.
-        var prev = new Dictionary<StationId, StationId?>(Adjacency.Count);
-
-        foreach (var v in Adjacency.Keys)
+    private PathResult Dijkstra(int source, int target, Func<FareInfo, decimal> weightSelector)
+    {
+        if (source == target)
         {
-            distances[v] = decimal.MaxValue;
-            prev[v] = null;
+            var lone = _nodes[source];
+            return new PathResult(0m, [lone]);
         }
-        distances[from] = 0m;
 
-        // Min-priority queue keyed by current best distance.
-        var pq = new PriorityQueue<StationId, decimal>();
-        pq.Enqueue(from, 0m);
+        var n = _nodes.Count;
+        var dist = new decimal[n];
+        var prev = new int[n];
+        var visited = new bool[n];
 
-        // Track settled nodes (final shortest distances).
-        var visited = new HashSet<StationId>();
-
-        while (pq.TryDequeue(out var u, out var distU))
+        for (var i = 0; i < n; i++)
         {
-            // Skip if we already finalized this node.
-            if (!visited.Add(u))
-                continue;
+            dist[i] = decimal.MaxValue;
+            prev[i] = -1;
+        }
+        dist[source] = 0m;
 
-            // Early exit: destination popped with its final shortest distance.
-            if (u.Equals(to))
+        var pq = new PriorityQueue<int, decimal>();
+        pq.Enqueue(source, 0m);
+
+        while (pq.TryDequeue(out var u, out var du))
+        {
+            if (visited[u]) continue;
+            visited[u] = true;
+
+            if (u == target)
+                return new PathResult(du, ReconstructPath(prev, source, target));
+
+            foreach (var (v, fareInfo) in _adjacency[u])
             {
-                var path = ReconstructPath(prev, from, to);
-                return new PathResult(distU, path);
-            }
+                if (visited[v]) continue;
+                var w = weightSelector(fareInfo);
+                if (w < 0) continue; // Defensive
+                var alt = du + w;
+                if (alt >= dist[v]) continue;
 
-            // Get adjacency list; continue if isolated.
-            if (!Adjacency.TryGetValue(u, out var neighbors))
-                continue;
-
-            // Relax each outgoing edge (u -> v).
-            foreach (var (v, fareInfo) in neighbors)
-            {
-                var weight = weightSelector(fareInfo);
-                if (weight < 0) continue; // Defensive: ignore invalid negative weights.
-
-                var alt = distU + weight;
-                // If we found a strictly better path to v, record it.
-                if (alt >= distances[v])
-                    continue;
-
-                distances[v] = alt;
+                dist[v] = alt;
                 prev[v] = u;
                 pq.Enqueue(v, alt);
             }
         }
 
-        // If loop finishes without returning, no path was discovered.
-        throw new InvalidOperationException($"No path found from {from} to {to}.");
+        throw new InvalidOperationException(
+            $"No path found between {_nodes[source]} and {_nodes[target]}");
     }
 
-    /// <summary>
-    /// Reconstructs the path from source to destination using the predecessor map.
-    /// </summary>
-    private static List<StationId> ReconstructPath(Dictionary<StationId, StationId?> prev, StationId from, StationId to)
+    private IReadOnlyList<Station> ReconstructPath(int[] prev, int source, int target)
     {
-        var path = new List<StationId>();
-        var current = to;
-
-        // Walk backwards from destination until reaching source (or missing predecessor).
-        while (!current.Equals(from))
+        var stack = new Stack<Station>();
+        var cur = target;
+        while (cur != -1)
         {
-            path.Add(current);
-            if (!prev.TryGetValue(current, out var p) || p is null)
-                break; // No complete path; partial safety net (should not occur if called correctly).
-            current = p;
+            var k = _nodes[cur];
+            stack.Push(k);
+            if (cur == source) break;
+            cur = prev[cur];
         }
-
-        path.Add(from);
-        path.Reverse(); // Now ordered from source -> destination.
-        return path;
+        if (stack.Peek().TransitLine != _nodes[source].TransitLine || stack.Peek().Code != _nodes[source].Code)
+            throw new InvalidOperationException("Path reconstruction failed.");
+        return stack.ToList();
     }
 }

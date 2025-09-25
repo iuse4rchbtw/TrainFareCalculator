@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "TFC.Console": {
+    "TFC.CLI": {
       "commandName": "Project",
-      "commandLineArgs": ".",
-      "workingDirectory": "$(SolutionDir)\\Fares"
+      "commandLineArgs": "directory.json",
+      "workingDirectory": "C:\\Users\\Kian\\Documents\\train fares\\"
     }
   }
 }

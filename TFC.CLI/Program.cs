@@ -1,4 +1,5 @@
 ﻿using TFC.TrainFareCalculator;
+using Directory = TFC.TrainFareCalculator.Directory;
 
 namespace TFC.CLI;
 
@@ -13,18 +14,16 @@ internal class Program
             return;
         }
 
-        // read the fare matrix files for LRT-1, LRT-2, and MRT-3 from the specified directory
-        var directoryPath = args[0];
-        var graph = new Graph();
-        var fareMatrices = LoadAllMatrices(directoryPath, graph);
+        var directory = Directory.Load(args[0]);
+        var graph = GraphBuilder.Build(directory);
 
         do
         {
             try
             {
                 var isStoredValue = GetIsStoredValueCard();
-                var from = GetStartTransitLineAndStation(fareMatrices);
-                var to = GetDestTransitLineAndStation(fareMatrices);
+                var from = GetStartTransitLineAndStation(directory);
+                var to = GetDestTransitLineAndStation(directory);
 
                 PrintFareAndPath(from, to, graph, isStoredValue);
             }
@@ -38,60 +37,21 @@ internal class Program
             Console.Clear();
         } while (true);
     }
-
-    private static (TransitLine, string[]) LoadMatrix(string directoryPath, TransitLine line, Graph graph)
-    {
-        // determine the file name based on the transit line and payment type
-        var fileName = line switch
-        {
-            TransitLine.GreenLine => "GL.txt",
-            TransitLine.PurpleLine => "PL.txt",
-            TransitLine.YellowLine => "YL.txt",
-            _ => throw new ArgumentOutOfRangeException(nameof(line), $"Unsupported transit line: {line}")
-        };
-        var filePath = Path.Combine(directoryPath, fileName); // construct the full file path
-        // check if the file exists
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException($"Fare matrix file not found: {filePath}");
-        // open file
-        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        return FareMatrixLoader.LoadMatrixFromFile(filePath, graph);
-    }
-
-    private static Dictionary<TransitLine, string[]> LoadAllMatrices(string directoryPath, Graph graph)
-    {
-        // dictionary to hold fare matrices for each combination of transit line and payment type
-        var filePath = Path.Combine(directoryPath, "transfers.txt"); // construct the full file path
-
-        Dictionary<TransitLine, string[]> fareMatrices = [];
-
-        foreach (var value in Enum.GetValues(typeof(TransitLine)))
-        {
-            var line = (TransitLine)value;
-            var (transitLine, stations) = LoadMatrix(directoryPath, line, graph);
-            fareMatrices[transitLine] = stations;
-        }
-
-        FareMatrixLoader.LoadTransfersFromFile(filePath, graph);
-
-        // iterate over all combinations of transit lines and payment types
-        return fareMatrices;
-    }
-
-    private static void PrintTransitLines()
+    
+    private static void PrintTransitLines(List<Matrix> matrices)
     {
         // print available transit lines 
         Console.WriteLine("Available Transit Lines:");
-        foreach (var (line, index) in Enum.GetValues<TransitLine>().Select((line, index) => (line, index + 1)))
-            Console.WriteLine($"{index}) {line.GetDescription()}");
+        foreach (var (matrix, i) in matrices.Select((matrix, i) => (matrix, i)))
+            Console.WriteLine($"{i + 1}) {matrix.TransitLine}");
     }
 
-    private static void PrintStations(TransitLine transitLine, string[] stations)
+    private static void PrintStations(Matrix matrix)
     {
         // print available stations for the selected transit line
-        Console.WriteLine($"Stations on {transitLine.GetDescription()}:");
-        for (var i = 0; i < stations.Length; i++)
-            Console.WriteLine($"{i + 1}) {stations[i]}");
+        Console.WriteLine($"Stations on {matrix.TransitLine}:");
+        foreach (var (station, i) in matrix.Stations.Select((station, i) => (station, i)))
+            Console.WriteLine($"{i + 1}) ({station.Code}) {station.Name}");
     }
 
     private static bool TryGetInput(string prompt, out int result, Predicate<int> validator)
@@ -113,53 +73,55 @@ internal class Program
         return paymentType == 1; // flag to indicate if using stored value card (SVC) or single journey ticket (SJT)
     }
 
-    private static StationId GetStartTransitLineAndStation(Dictionary<TransitLine, string[]> fareMatrices)
+    private static Station GetStartTransitLineAndStation(Directory directory)
     {
+        var matrices = directory.Matrices;
         // let user choose starting transit line and station
-        PrintTransitLines();
+        PrintTransitLines(matrices);
         if (!TryGetInput("Select starting transit line (number): ", out var startLineIndex,
-                i => i >= 1 && i <= fareMatrices.Count))
+                i => i >= 1 && i <= matrices.Count))
             throw new InvalidDataException("Invalid transit line selection.");
 
         Console.Clear();
-        var startLine = fareMatrices.Keys.ElementAt(startLineIndex - 1);
+        var startLine = matrices.ElementAt(startLineIndex - 1);
 
         // let user choose starting station
-        PrintStations(startLine, fareMatrices[startLine]);
+        PrintStations(startLine);
         if (!TryGetInput("Select starting station (number): ", out var startStationIndex,
-                i => i >= 1 && i <= fareMatrices[startLine].Length))
+                i => i >= 1 && i <= startLine.Stations.Count))
             throw new InvalidDataException("Invalid station selection.");
 
 
         Console.Clear();
-        var startStation = fareMatrices[startLine][startStationIndex - 1];
+        var startStation = startLine.Stations[startStationIndex - 1];
 
-        return new StationId(startLine, startStation);
+        return startStation;
     }
 
-    private static StationId GetDestTransitLineAndStation(Dictionary<TransitLine, string[]> fareMatrices)
+    private static Station GetDestTransitLineAndStation(Directory directory)
     {
+        var matrices = directory.Matrices;
         // let user choose destination transit line and station
-        PrintTransitLines();
+        PrintTransitLines(matrices);
         if (!TryGetInput("Select destination transit line (number): ", out var destLineIndex,
-                i => i >= 1 && i <= fareMatrices.Count))
+                i => i >= 1 && i <= matrices.Count))
             throw new InvalidDataException("Invalid transit line selection.");
 
 
         Console.Clear();
-        var destLine = fareMatrices.Keys.ElementAt(destLineIndex - 1);
+        var destLine = matrices.ElementAt(destLineIndex - 1);
 
-        PrintStations(destLine, fareMatrices[destLine]);
+        PrintStations(destLine);
         if (!TryGetInput("Select destination station (number): ", out var destStationIndex,
-                i => i >= 1 && i <= fareMatrices[destLine].Length))
+                i => i >= 1 && i <= destLine.Stations.Count))
             throw new InvalidDataException("Invalid station selection.");
 
         Console.Clear();
-        var destStation = fareMatrices[destLine][destStationIndex - 1];
+        var destStation = destLine.Stations[destStationIndex - 1];
 
-        return new StationId(destLine, destStation);
+        return destStation;
     }
-    private static void PrintFareAndPath(StationId from, StationId to, Graph graph, bool isStoredValue)
+    private static void PrintFareAndPath(Station from, Station to, Graph graph, bool isStoredValue)
     {
         if (from.Equals(to))
         {
