@@ -2,8 +2,6 @@
   "profiles": {
     "Windows Machine": {
       "commandName": "Project",
-      "commandLineArgs": ".",
-      "workingDirectory": "$(SolutionDir)/Fares",
       "nativeDebugging": false
     }
   }

@@ -8,10 +8,10 @@ public class Directory
     public required List<Matrix> Matrices { get; init; }
     public required List<Transfer> Transfers { get; init; }
 
-    public static Directory Load(string filePath)
+    public static async Task<Directory> LoadAsync(string filePath, Func<string, Task<string>> fs)
     {
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var jsonString = File.ReadAllText(filePath);
+        var jsonString = await fs(filePath);
         var directoryInfo = JsonSerializer.Deserialize<DirectoryInfo>(jsonString, options);
         ValidateDirectoryInfo(directoryInfo);
 
@@ -21,7 +21,7 @@ public class Directory
         foreach (var file in directoryInfo!.MatrixPaths)
         {
             // deserialize json file
-            var matrixJson = File.ReadAllText(file);
+            var matrixJson = await fs(file);
             var matrix = JsonSerializer.Deserialize<Matrix>(matrixJson, options);
             ValidateMatrix(file, matrix);
 
@@ -29,12 +29,17 @@ public class Directory
         }
 
         // load transfers
-        var transfersJson = File.ReadAllText(directoryInfo.TransfersPath);
+        var transfersJson = await fs(directoryInfo.TransfersPath);
         var transfers = JsonSerializer.Deserialize<List<Transfer>>(transfersJson, options);
 
         return transfers is null ? 
             throw new InvalidDataException($"Failed to deserialize transfers file: {directoryInfo.TransfersPath}") : 
             new Directory { Matrices = transitLines, Transfers = transfers };
+    }
+
+    public static Directory Load(string filePath)
+    {
+        return LoadAsync(filePath, async path => await File.ReadAllTextAsync(path)).GetAwaiter().GetResult();
     }
 
     private static void ValidateMatrix(string path, Matrix? matrix)

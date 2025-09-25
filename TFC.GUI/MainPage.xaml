@@ -41,8 +41,9 @@
         </VerticalStackLayout>
         <Button Text="Calculate Fare" IsEnabled="{Binding IsDataComplete}"
                 Command="{Binding CalculateFareCommand}"/>
-        <VerticalStackLayout IsVisible="{Binding IsCalculationComplete}">
-            <Label TextType="Html" FontSize="22">
+        <VerticalStackLayout IsVisible="{Binding IsCalculationComplete}"
+                             Spacing="8">
+            <Label TextType="Html" FontSize="16">
                 <Label.Text>
                     <MultiBinding StringFormat="Fare from &lt;b&gt;{0} {1}&lt;/b&gt; to &lt;b&gt;{2} {3}&lt;/b&gt;" >
                         <Binding Path="SelectedFromTransitLine"/>

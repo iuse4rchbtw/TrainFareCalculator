@@ -1,5 +1,6 @@
 ﻿using System.Windows.Input;
 using Metalama.Patterns.Observability;
+using TFC.GUI.Loaders;
 using TFC.TrainFareCalculator;
 using Directory = TFC.TrainFareCalculator.Directory;
 
@@ -8,7 +9,7 @@ namespace TFC.GUI.PageModels;
 [Observable]
 public partial class MainPageModel
 {
-    public List<string> TransitLines { get; }
+    public List<string> TransitLines { get; set; }
     
     private int _selectedFromTransitLineIdx = -1;
     public int SelectedFromTransitLineIdx
@@ -73,8 +74,8 @@ public partial class MainPageModel
     
     public bool IsStoredValueCard { get; set; } = true;
     
-    private readonly Directory _directory;
-    private readonly Graph _graph;
+    private Directory _directory;
+    private Graph _graph;
     
     public decimal CalculatedFare { get; private set; }
     public bool IsDataComplete =>
@@ -87,10 +88,13 @@ public partial class MainPageModel
     public MainPageModel()
     {
         // read data from directory
-        _directory = Directory.Load("directory.json");
-        _graph = GraphBuilder.Build(_directory);
-
-        TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
+        Task.Run(async () =>
+        {
+            _directory = await Directory.LoadAsync("directory.json", MauiAssetLoader.LoadMauiAsset);
+            _graph = GraphBuilder.Build(_directory);
+            
+            TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
+        });
     }
     
     public ICommand CalculateFareCommand => new Command(CalculateFare);
