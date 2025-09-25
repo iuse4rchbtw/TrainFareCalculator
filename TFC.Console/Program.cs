@@ -14,7 +14,7 @@ internal class Program
         // read the fare matrix files for LRT-1, LRT-2, and MRT-3 from the specified directory
         var directoryPath = args[0];
         var graph = new Graph();
-        var fareMatrices = LoadAllFareMatrices(directoryPath, graph);
+        var fareMatrices = LoadAllMatrices(directoryPath, graph);
 
         do
         {
@@ -37,7 +37,7 @@ internal class Program
         } while (true);
     }
 
-    private static (TransitLine, string[]) LoadFareMatrix(string directoryPath, TransitLine line, Graph graph)
+    private static (TransitLine, string[]) LoadMatrix(string directoryPath, TransitLine line, Graph graph)
     {
         // determine the file name based on the transit line and payment type
         var fileName = line switch
@@ -53,10 +53,10 @@ internal class Program
             throw new FileNotFoundException($"Fare matrix file not found: {filePath}");
         // open file
         using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        return FareMatrixLoader.LoadFromFile(filePath, graph);
+        return FareMatrixLoader.LoadMatrixFromFile(filePath, graph);
     }
 
-    private static Dictionary<TransitLine, string[]> LoadAllFareMatrices(string directoryPath, Graph graph)
+    private static Dictionary<TransitLine, string[]> LoadAllMatrices(string directoryPath, Graph graph)
     {
         // dictionary to hold fare matrices for each combination of transit line and payment type
         var filePath = Path.Combine(directoryPath, "transfers.txt"); // construct the full file path
@@ -66,7 +66,7 @@ internal class Program
         foreach (var value in Enum.GetValues(typeof(TransitLine)))
         {
             var line = (TransitLine)value;
-            var (transitLine, stations) = LoadFareMatrix(directoryPath, line, graph);
+            var (transitLine, stations) = LoadMatrix(directoryPath, line, graph);
             fareMatrices[transitLine] = stations;
         }
 
@@ -165,7 +165,7 @@ internal class Program
             return;
         }
 
-        var (sjt, svc) = graph.FindShortestPathsWithPath(from, to);
+        var (sjt, svc) = graph.FindShortestPaths(from, to);
 
         Console.Clear();
 

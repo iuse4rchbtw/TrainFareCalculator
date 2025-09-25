@@ -3,6 +3,9 @@ using System.Reflection;
 
 namespace TFC.TrainFareCalculator;
 
+/// <summary>
+/// Enumeration of transit lines with descriptions for display.
+/// </summary>
 public enum TransitLine
 {
     [Description("LRT-1")]
