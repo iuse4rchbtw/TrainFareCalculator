@@ -3,7 +3,7 @@
     "TFC.CLI": {
       "commandName": "Project",
       "commandLineArgs": "directory.json",
-      "workingDirectory": "$(SolutionDir)\\Fares"
+      "workingDirectory": "$(SolutionDir)\\TFC.GUI\\Resources\\Raw"
     }
   }
 }

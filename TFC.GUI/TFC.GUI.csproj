@@ -19,7 +19,7 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-        <AotAssemblies>False</AotAssemblies>
+        <RunAOTCompilation>False</RunAOTCompilation>
 
 		<!-- Display name -->
 		<ApplicationTitle>Train Fare Calculator</ApplicationTitle>

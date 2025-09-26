@@ -36,7 +36,7 @@ public partial class MainPageModel
     }
 
     public string SelectedToTransitLine { get; set; } = "";
-
+    
     public List<string> FromStations
     {
         get
