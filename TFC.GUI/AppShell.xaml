@@ -8,7 +8,6 @@
     Title="TFC.GUI">
 
     <ShellContent
-        Title="Train Fare Calculator"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
