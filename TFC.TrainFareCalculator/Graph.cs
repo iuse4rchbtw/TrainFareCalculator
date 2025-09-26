@@ -49,7 +49,8 @@ public class Graph
     public void AddTransfer(Station from, Station to)
         => AddEdge(from, to, new FareInfo(0, 0));
 
-    public record PathResult(decimal Total, IReadOnlyList<Station> Path);
+    public record PathResult(decimal Total, IReadOnlyList<PathComponent> Path);
+    public record PathComponent(Station Station, decimal Fare);
 
     // Compute independent SJT & SVC minimal paths.
     public (PathResult SingleJourneyTicket, PathResult StoredValueCard) FindShortestPaths(
@@ -76,7 +77,8 @@ public class Graph
         if (source == target)
         {
             var lone = _nodes[source];
-            return new PathResult(0m, [lone]);
+            var pc = new PathComponent(lone, 0m);
+            return new PathResult(0m, [pc]);
         }
 
         var n = _nodes.Count;
@@ -100,7 +102,7 @@ public class Graph
             visited[u] = true;
 
             if (u == target)
-                return new PathResult(du, ReconstructPath(prev, source, target));
+                return new PathResult(du, ReconstructPath(prev, source, target, weightSelector));
 
             foreach (var (v, fareInfo) in _adjacency[u])
             {
@@ -120,18 +122,27 @@ public class Graph
             $"No path found between {_nodes[source]} and {_nodes[target]}");
     }
 
-    private List<Station> ReconstructPath(int[] prev, int source, int target)
+    private List<PathComponent> ReconstructPath(int[] prev, int source, int target, Func<FareInfo, decimal> weightSelector)
     {
-        var stack = new Stack<Station>();
+        var stack = new Stack<PathComponent>();
         var cur = target;
         while (cur != -1)
         {
             var k = _nodes[cur];
-            stack.Push(k);
+            // get the fare of the next component in the path
+            var fare = 0m;
+            var p = prev[cur];
+            if (p != -1)
+            {
+                var fareInfo = _adjacency[cur][p];
+                fare = weightSelector(fareInfo);
+            }
+            var pc = new PathComponent(k, fare);
+            stack.Push(pc);
             if (cur == source) break;
             cur = prev[cur];
         }
-        if (stack.Peek().TransitLine != _nodes[source].TransitLine || stack.Peek().Code != _nodes[source].Code)
+        if (stack.Peek().Station.TransitLine != _nodes[source].TransitLine || stack.Peek().Station.Code != _nodes[source].Code)
             throw new InvalidOperationException("Path reconstruction failed.");
         return stack.ToList();
     }
