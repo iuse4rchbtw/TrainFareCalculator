@@ -57,7 +57,7 @@ public class Graph
     }
 
     // Compute independent SJT & SVC minimal paths.
-    public (PathResult SingleJourneyTicket, PathResult StoredValueCard) FindShortestPaths(
+    public Paths FindShortestPaths(
         Station from,
         Station to)
     {
@@ -66,7 +66,7 @@ public class Graph
 
         var sjt = Dijkstra(fromIdx, toIdx, fi => fi.SingleJourneyTicket);
         var svc = Dijkstra(fromIdx, toIdx, fi => fi.StoredValueCard);
-        return (sjt, svc);
+        return new Paths(sjt, svc);
     }
 
     private int ResolveIndex(Station id)
@@ -159,4 +159,6 @@ public class Graph
     public record PathResult(decimal Total, IReadOnlyList<PathComponent> Path);
 
     public record PathComponent(Station Station, decimal Fare);
+    
+    public record Paths(PathResult SingleJourneyTicket, PathResult StoredValueCard);
 }

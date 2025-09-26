@@ -15,17 +15,13 @@ public partial class MainPageModel
     private int _selectedFromTransitLineIdx = -1;
 
     private int _selectedToTransitLineIdx = -1;
-
-    public MainPageModel()
+    
+    public async Task InitializeAsync()
     {
-        // read data from directory
-        Task.Run(async () =>
-        {
-            _directory = await Directory.LoadAsync("directory.json", MauiAssetLoader.LoadMauiAsset);
-            _graph = GraphBuilder.Build(_directory);
+        _directory = await Directory.LoadAsync("directory.json", MauiAssetLoader.LoadMauiAsset);
+        _graph = GraphBuilder.Build(_directory);
 
-            TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
-        });
+        TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
     }
 
     public List<string> TransitLines { get; set; }
@@ -91,28 +87,48 @@ public partial class MainPageModel
     public string SelectedToStationName { get; set; } = "";
 
     public bool IsStoredValueCard { get; set; } = true;
+    public bool IsDiscounted { get; set; }
 
-    public decimal CalculatedFare { get; private set; }
-    public List<PathComponentWithIndex> CalculatedPath { get; set; } = [];
+    public decimal CalculatedFare
+    {
+        get
+        {
+            if (!IsDataComplete)
+                return 0m;
+            
+            var paths = CalculateFare();
+            var calcFare = IsStoredValueCard ? paths.StoredValueCard.Total : paths.SingleJourneyTicket.Total;
+            
+            return IsDiscounted ? calcFare / 2 : calcFare; // apply 50% discount if applicable
+        }
+    }
+
+    public List<Graph.PathComponent> CalculatedPath
+    {
+        get
+        {
+            if (!IsDataComplete)
+                return [];
+            
+            var paths = CalculateFare();
+            var calcPath = IsStoredValueCard 
+                ? paths.StoredValueCard.Path 
+                : paths.SingleJourneyTicket.Path;
+
+            return IsDiscounted
+                ? calcPath.Select(p => p with { Fare = p.Fare / 2 }).ToList()
+                : calcPath.ToList();
+        }
+    }
 
     public bool IsDataComplete =>
         SelectedFromTransitLineIdx != -1 &&
         SelectedToTransitLineIdx != -1 &&
         SelectedFromStationIdx != -1 &&
         SelectedToStationIdx != -1;
-
-    public bool IsCalculationComplete { get; set; }
-
-    public ICommand CalculateFareCommand => new Command(CalculateFare);
-
-    private void CalculateFare()
+    
+    private Graph.Paths CalculateFare()
     {
-        if (!IsDataComplete)
-        {
-            CalculatedFare = 0;
-            return;
-        }
-
         var fromTl = _directory.Matrices[SelectedFromTransitLineIdx];
         var toTl = _directory.Matrices[SelectedToTransitLineIdx];
         var fromStation = fromTl.Stations[SelectedFromStationIdx];
@@ -123,15 +139,10 @@ public partial class MainPageModel
         SelectedToTransitLine = toTl.TransitLine;
         SelectedToStationName = toStation.Name;
 
-        var fareInfo = _graph.FindShortestPaths(
+        var paths = _graph.FindShortestPaths(
             new Station(fromStation.TransitLine, fromStation.Code, fromStation.Name),
             new Station(toStation.TransitLine, toStation.Code, toStation.Name));
 
-        CalculatedFare = IsStoredValueCard ? fareInfo.StoredValueCard.Total : fareInfo.SingleJourneyTicket.Total;
-        var calcPath = IsStoredValueCard ? fareInfo.StoredValueCard.Path : fareInfo.SingleJourneyTicket.Path;
-        CalculatedPath = calcPath.Select((p, i) => new PathComponentWithIndex(p, i + 1)).ToList();
-        IsCalculationComplete = true;
+        return paths;
     }
-
-    public record PathComponentWithIndex(Graph.PathComponent Component, int Index);
 }
