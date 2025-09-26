@@ -37,7 +37,7 @@ internal class Program
             Console.Clear();
         } while (true);
     }
-    
+
     private static void PrintTransitLines(List<Matrix> matrices)
     {
         // print available transit lines 
@@ -121,6 +121,7 @@ internal class Program
 
         return destStation;
     }
+
     private static void PrintFareAndPath(Station from, Station to, Graph graph, bool isStoredValue)
     {
         if (from.Equals(to))
@@ -138,7 +139,8 @@ internal class Program
 
         Console.WriteLine($"Total Fare: {path.Total:C}");
         Console.WriteLine("Path:");
-        Console.WriteLine($"- {string.Join(" -> ", path.Path.Select(p => $"{p.Station.TransitLine} {p.Station.Name} ({p.Fare})"))}");
+        Console.WriteLine(
+            $"- {string.Join(" -> ", path.Path.Select(p => $"{p.Station.TransitLine} {p.Station.Name} ({p.Fare})"))}");
 
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey();

@@ -1,12 +1,12 @@
 ﻿namespace TFC.TrainFareCalculator;
 
 /// <summary>
-/// Builds a Graph (string based) from a Directory definition (matrices + transfers).
-/// Assumptions:
-///   1. Each Matrix represents ONE transit line (identified by Matrix.LineCode).
-///   2. Fares.SingleJourneyTicket and Fares.StoredValueCard are full N×N matrices where
-///      entry[i][j] is the total fare from station i to station j on that line (not incremental).
-///   3. Transfers list contains zero‑fare links between two stations (possibly different lines).
+///     Builds a Graph (string based) from a Directory definition (matrices + transfers).
+///     Assumptions:
+///     1. Each Matrix represents ONE transit line (identified by Matrix.LineCode).
+///     2. Fares.SingleJourneyTicket and Fares.StoredValueCard are full N×N matrices where
+///     entry[i][j] is the total fare from station i to station j on that line (not incremental).
+///     3. Transfers list contains zero‑fare links between two stations (possibly different lines).
 /// </summary>
 public static class GraphBuilder
 {
@@ -40,7 +40,8 @@ public static class GraphBuilder
                 .Stations.FirstOrDefault(s => s.Code == t.To.Code)?.Name;
 
             if (fromName is null)
-                throw new InvalidDataException($"Transfer 'From' station not found: {t.From.TransitLine} {t.From.Code}");
+                throw new InvalidDataException(
+                    $"Transfer 'From' station not found: {t.From.TransitLine} {t.From.Code}");
 
             if (toName is null)
                 throw new InvalidDataException($"Transfer 'To' station not found: {t.To.TransitLine} {t.To.Code}");
@@ -107,9 +108,7 @@ public static class GraphBuilder
             throw new InvalidDataException($"{label} row count {m.Count} != station count {expected}.");
 
         for (var r = 0; r < m.Count; r++)
-        {
             if (m[r].Count != expected)
                 throw new InvalidDataException($"{label} row {r} has {m[r].Count} columns (expected {expected}).");
-        }
     }
 }

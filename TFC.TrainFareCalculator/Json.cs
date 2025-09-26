@@ -29,4 +29,5 @@ public record Station(string TransitLine, string Code, string Name)
         return $"({Code}) {TransitLine} {Name}";
     }
 }
+
 public record FareInfo(decimal StoredValueCard, decimal SingleJourneyTicket);

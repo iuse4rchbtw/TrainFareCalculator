@@ -1,11 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8"?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:pm="clr-namespace:TFC.GUI.PageModels"
              x:Class="TFC.GUI.MainPage"
              x:DataType="pm:MainPageModel">
     <ContentPage.BindingContext>
-        <pm:MainPageModel/>
+        <pm:MainPageModel />
     </ContentPage.BindingContext>
     <ScrollView>
         <VerticalStackLayout Padding="12" Spacing="24">
@@ -14,46 +15,46 @@
                     <Label FontSize="18">Transit Line</Label>
                     <Picker ItemsSource="{Binding TransitLines}"
                             SelectedIndex="{Binding SelectedFromTransitLineIdx,Mode=TwoWay}"
-                            Title="From"/>
-                    <Picker ItemsSource="{Binding TransitLines}" 
+                            Title="From" />
+                    <Picker ItemsSource="{Binding TransitLines}"
                             SelectedIndex="{Binding SelectedToTransitLineIdx,Mode=TwoWay}"
-                            Title="To"/>
+                            Title="To" />
                 </VerticalStackLayout>
                 <VerticalStackLayout Spacing="6" Grid.Column="1">
                     <Label FontSize="18">Station</Label>
-                    <Picker ItemsSource="{Binding FromStations}" 
+                    <Picker ItemsSource="{Binding FromStations}"
                             SelectedIndex="{Binding SelectedFromStationIdx,Mode=TwoWay}"
-                            Title="From"/>
-                    <Picker ItemsSource="{Binding ToStations}" 
+                            Title="From" />
+                    <Picker ItemsSource="{Binding ToStations}"
                             SelectedIndex="{Binding SelectedToStationIdx,Mode=TwoWay}"
-                            Title="To"/>
+                            Title="To" />
                 </VerticalStackLayout>
             </Grid>
             <VerticalStackLayout Spacing="4">
                 <Label>Payment Method</Label>
                 <VerticalStackLayout>
                     <RadioButton Content="Stored-Value Card (beep™ card)"
-                                 IsChecked="{Binding IsStoredValueCard,Mode=TwoWay}"/>
-                    <RadioButton Content="Single Journey Ticket"/>
+                                 IsChecked="{Binding IsStoredValueCard,Mode=TwoWay}" />
+                    <RadioButton Content="Single Journey Ticket" />
                 </VerticalStackLayout>
             </VerticalStackLayout>
             <Button Text="Calculate Fare" IsEnabled="{Binding IsDataComplete}"
-                    Command="{Binding CalculateFareCommand}"/>
+                    Command="{Binding CalculateFareCommand}" />
             <VerticalStackLayout IsVisible="{Binding IsCalculationComplete}"
                                  Spacing="8">
                 <Label TextType="Html" FontSize="16">
                     <Label.Text>
-                        <MultiBinding StringFormat="Fare from &lt;b&gt;{0} {1}&lt;/b&gt; to &lt;b&gt;{2} {3}&lt;/b&gt;" >
-                            <Binding Path="SelectedFromTransitLine"/>
-                            <Binding Path="SelectedFromStationName"/>
-                            <Binding Path="SelectedToTransitLine"/>
-                            <Binding Path="SelectedToStationName"/>
+                        <MultiBinding StringFormat="Fare from &lt;b&gt;{0} {1}&lt;/b&gt; to &lt;b&gt;{2} {3}&lt;/b&gt;">
+                            <Binding Path="SelectedFromTransitLine" />
+                            <Binding Path="SelectedFromStationName" />
+                            <Binding Path="SelectedToTransitLine" />
+                            <Binding Path="SelectedToStationName" />
                         </MultiBinding>
                     </Label.Text>
                 </Label>
-                <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}" 
-                       FontSize="32"/>
-                
+                <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}"
+                       FontSize="32" />
+
                 <Label FontSize="16" Margin="0,12,0,0">Fare Breakdown</Label>
                 <CollectionView ItemsSource="{Binding CalculatedPath}">
                     <CollectionView.Header>
@@ -62,26 +63,26 @@
                                 <Label Grid.Column="1" FontAttributes="Bold">Station</Label>
                                 <Label Grid.Column="2" FontAttributes="Bold">Fare</Label>
                             </Grid>
-                            <BoxView HeightRequest="1" BackgroundColor="Gray" Margin="0 ,8"/>
+                            <BoxView HeightRequest="1" BackgroundColor="Gray" Margin="0 ,8" />
                         </VerticalStackLayout>
                     </CollectionView.Header>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="pm:MainPageModel+PathComponentWithIndex">
                             <Grid ColumnDefinitions="24,240,*" ColumnSpacing="8" RowSpacing="8">
                                 <Label Grid.Column="0"
-                                       FontAttributes="Bold" 
+                                       FontAttributes="Bold"
                                        Text="{Binding  Index}"
-                                       HorizontalTextAlignment="End"/>
+                                       HorizontalTextAlignment="End" />
                                 <Label Grid.Column="1">
                                     <Label.Text>
                                         <MultiBinding StringFormat="{}{0} {1}">
-                                            <Binding Path="Component.Station.TransitLine"/>
-                                            <Binding Path="Component.Station.Name"/>
+                                            <Binding Path="Component.Station.TransitLine" />
+                                            <Binding Path="Component.Station.Name" />
                                         </MultiBinding>
                                     </Label.Text>
                                 </Label>
                                 <Label Grid.Column="2"
-                                       Text="{Binding StringFormat='{0:C}',Path=Component.Fare}"/>
+                                       Text="{Binding StringFormat='{0:C}',Path=Component.Fare}" />
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>

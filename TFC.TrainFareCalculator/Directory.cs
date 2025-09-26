@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace TFC.TrainFareCalculator;
 
@@ -32,9 +31,9 @@ public class Directory
         var transfersJson = await fs(directoryInfo.TransfersPath);
         var transfers = JsonSerializer.Deserialize<List<Transfer>>(transfersJson, options);
 
-        return transfers is null ? 
-            throw new InvalidDataException($"Failed to deserialize transfers file: {directoryInfo.TransfersPath}") : 
-            new Directory { Matrices = transitLines, Transfers = transfers };
+        return transfers is null
+            ? throw new InvalidDataException($"Failed to deserialize transfers file: {directoryInfo.TransfersPath}")
+            : new Directory { Matrices = transitLines, Transfers = transfers };
     }
 
     public static Directory Load(string filePath)

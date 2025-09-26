@@ -2,12 +2,14 @@ namespace TFC.TrainFareCalculator;
 
 public class Graph
 {
-    // Stored nodes (index -> key)
-    private readonly List<Station> _nodes = [];
-    // Reverse lookup (key -> index)
-    private readonly Dictionary<Station, int> _indexByKey = [];
     // Adjacency list: index -> (neighborIndex -> FareInfo)
     private readonly List<Dictionary<int, FareInfo>> _adjacency = [];
+
+    // Reverse lookup (key -> index)
+    private readonly Dictionary<Station, int> _indexByKey = [];
+
+    // Stored nodes (index -> key)
+    private readonly List<Station> _nodes = [];
 
     // Thread-safe if needed for parallel build (optional)
     private readonly object _sync = new();
@@ -32,11 +34,14 @@ public class Graph
     }
 
     // Ensure node exists without returning index (optional convenience)
-    public void EnsureNode(Station id) => GetOrAddNode(id);
+    public void EnsureNode(Station id)
+    {
+        GetOrAddNode(id);
+    }
 
     // Add or update an undirected edge.
     public void AddEdge(Station from, Station to,
-                        FareInfo fareInfo)
+        FareInfo fareInfo)
     {
         var a = GetOrAddNode(from);
         var b = GetOrAddNode(to);
@@ -47,10 +52,9 @@ public class Graph
 
     // Zero-fare transfer (bi-directional).
     public void AddTransfer(Station from, Station to)
-        => AddEdge(from, to, new FareInfo(0, 0));
-
-    public record PathResult(decimal Total, IReadOnlyList<PathComponent> Path);
-    public record PathComponent(Station Station, decimal Fare);
+    {
+        AddEdge(from, to, new FareInfo(0, 0));
+    }
 
     // Compute independent SJT & SVC minimal paths.
     public (PathResult SingleJourneyTicket, PathResult StoredValueCard) FindShortestPaths(
@@ -58,7 +62,7 @@ public class Graph
         Station to)
     {
         var fromIdx = ResolveIndex(from);
-        var toIdx   = ResolveIndex(to);
+        var toIdx = ResolveIndex(to);
 
         var sjt = Dijkstra(fromIdx, toIdx, fi => fi.SingleJourneyTicket);
         var svc = Dijkstra(fromIdx, toIdx, fi => fi.StoredValueCard);
@@ -91,6 +95,7 @@ public class Graph
             dist[i] = decimal.MaxValue;
             prev[i] = -1;
         }
+
         dist[source] = 0m;
 
         var pq = new PriorityQueue<int, decimal>();
@@ -122,7 +127,8 @@ public class Graph
             $"No path found between {_nodes[source]} and {_nodes[target]}");
     }
 
-    private List<PathComponent> ReconstructPath(int[] prev, int source, int target, Func<FareInfo, decimal> weightSelector)
+    private List<PathComponent> ReconstructPath(int[] prev, int source, int target,
+        Func<FareInfo, decimal> weightSelector)
     {
         var stack = new Stack<PathComponent>();
         var cur = target;
@@ -137,13 +143,20 @@ public class Graph
                 var fareInfo = _adjacency[cur][p];
                 fare = weightSelector(fareInfo);
             }
+
             var pc = new PathComponent(k, fare);
             stack.Push(pc);
             if (cur == source) break;
             cur = prev[cur];
         }
-        if (stack.Peek().Station.TransitLine != _nodes[source].TransitLine || stack.Peek().Station.Code != _nodes[source].Code)
+
+        if (stack.Peek().Station.TransitLine != _nodes[source].TransitLine ||
+            stack.Peek().Station.Code != _nodes[source].Code)
             throw new InvalidOperationException("Path reconstruction failed.");
         return stack.ToList();
     }
+
+    public record PathResult(decimal Total, IReadOnlyList<PathComponent> Path);
+
+    public record PathComponent(Station Station, decimal Fare);
 }

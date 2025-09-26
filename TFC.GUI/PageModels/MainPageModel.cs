@@ -9,9 +9,27 @@ namespace TFC.GUI.PageModels;
 [Observable]
 public partial class MainPageModel
 {
-    public List<string> TransitLines { get; set; }
-    
+    private Directory _directory;
+    private Graph _graph;
+
     private int _selectedFromTransitLineIdx = -1;
+
+    private int _selectedToTransitLineIdx = -1;
+
+    public MainPageModel()
+    {
+        // read data from directory
+        Task.Run(async () =>
+        {
+            _directory = await Directory.LoadAsync("directory.json", MauiAssetLoader.LoadMauiAsset);
+            _graph = GraphBuilder.Build(_directory);
+
+            TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
+        });
+    }
+
+    public List<string> TransitLines { get; set; }
+
     public int SelectedFromTransitLineIdx
     {
         get => _selectedFromTransitLineIdx;
@@ -23,8 +41,7 @@ public partial class MainPageModel
     }
 
     public string SelectedFromTransitLine { get; set; } = "";
-    
-    private int _selectedToTransitLineIdx = -1;
+
     public int SelectedToTransitLineIdx
     {
         get => _selectedToTransitLineIdx;
@@ -36,14 +53,14 @@ public partial class MainPageModel
     }
 
     public string SelectedToTransitLine { get; set; } = "";
-    
+
     public List<string> FromStations
     {
         get
         {
             if (SelectedFromTransitLineIdx == -1)
                 return [];
-            
+
             return _directory.Matrices
                 .First(m => m.TransitLine == _directory.Matrices[SelectedFromTransitLineIdx].TransitLine)
                 .Stations
@@ -51,7 +68,7 @@ public partial class MainPageModel
                 .ToList();
         }
     }
-    
+
     public int SelectedFromStationIdx { get; set; } = -1;
     public string SelectedFromStationName { get; set; } = "";
 
@@ -61,7 +78,7 @@ public partial class MainPageModel
         {
             if (SelectedToTransitLineIdx == -1)
                 return [];
-            
+
             return _directory.Matrices
                 .First(m => m.TransitLine == _directory.Matrices[SelectedToTransitLineIdx].TransitLine)
                 .Stations
@@ -69,38 +86,25 @@ public partial class MainPageModel
                 .ToList();
         }
     }
+
     public int SelectedToStationIdx { get; set; } = -1;
     public string SelectedToStationName { get; set; } = "";
-    
+
     public bool IsStoredValueCard { get; set; } = true;
-    
-    private Directory _directory;
-    private Graph _graph;
-    
+
     public decimal CalculatedFare { get; private set; }
-    public record PathComponentWithIndex(Graph.PathComponent Component, int Index);
     public List<PathComponentWithIndex> CalculatedPath { get; set; } = [];
+
     public bool IsDataComplete =>
         SelectedFromTransitLineIdx != -1 &&
         SelectedToTransitLineIdx != -1 &&
         SelectedFromStationIdx != -1 &&
         SelectedToStationIdx != -1;
+
     public bool IsCalculationComplete { get; set; }
 
-    public MainPageModel()
-    {
-        // read data from directory
-        Task.Run(async () =>
-        {
-            _directory = await Directory.LoadAsync("directory.json", MauiAssetLoader.LoadMauiAsset);
-            _graph = GraphBuilder.Build(_directory);
-            
-            TransitLines = _directory.Matrices.Select(m => m.TransitLine).ToList();
-        });
-    }
-    
     public ICommand CalculateFareCommand => new Command(CalculateFare);
-    
+
     private void CalculateFare()
     {
         if (!IsDataComplete)
@@ -113,19 +117,21 @@ public partial class MainPageModel
         var toTl = _directory.Matrices[SelectedToTransitLineIdx];
         var fromStation = fromTl.Stations[SelectedFromStationIdx];
         var toStation = toTl.Stations[SelectedToStationIdx];
-        
+
         SelectedFromTransitLine = fromTl.TransitLine;
         SelectedFromStationName = fromStation.Name;
         SelectedToTransitLine = toTl.TransitLine;
         SelectedToStationName = toStation.Name;
-        
+
         var fareInfo = _graph.FindShortestPaths(
             new Station(fromStation.TransitLine, fromStation.Code, fromStation.Name),
             new Station(toStation.TransitLine, toStation.Code, toStation.Name));
-        
+
         CalculatedFare = IsStoredValueCard ? fareInfo.StoredValueCard.Total : fareInfo.SingleJourneyTicket.Total;
         var calcPath = IsStoredValueCard ? fareInfo.StoredValueCard.Path : fareInfo.SingleJourneyTicket.Path;
-        CalculatedPath = calcPath.Select((p, i) => new PathComponentWithIndex(p, i+1)).ToList();
+        CalculatedPath = calcPath.Select((p, i) => new PathComponentWithIndex(p, i + 1)).ToList();
         IsCalculationComplete = true;
     }
+
+    public record PathComponentWithIndex(Graph.PathComponent Component, int Index);
 }
