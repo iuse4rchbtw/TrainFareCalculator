@@ -27,11 +27,11 @@
                 <Picker  Grid.Column="1"
                          Grid.Row="1"
                          ItemsSource="{Binding TransitLines}"
-                         SelectedIndex="{Binding SelectedFromTransitLineIdx,Mode=TwoWay}" />
+                         SelectedIndex="{Binding SelectedFromTransitLine,Mode=TwoWay}" />
                 <Picker  Grid.Column="2"
                          Grid.Row="1"
                          ItemsSource="{Binding FromStations}"
-                         SelectedIndex="{Binding SelectedFromStationIdx,Mode=TwoWay}" />
+                         SelectedIndex="{Binding SelectedFromStation,Mode=TwoWay}" />
                 
                 <Label Grid.Column="0"
                        Grid.Row="2"
@@ -39,11 +39,11 @@
                 <Picker  Grid.Column="1"
                          Grid.Row="2"
                          ItemsSource="{Binding TransitLines}"
-                         SelectedIndex="{Binding SelectedToTransitLineIdx,Mode=TwoWay}" />
+                         SelectedIndex="{Binding SelectedToTransitLine,Mode=TwoWay}" />
                 <Picker  Grid.Column="2"
                          Grid.Row="2"
                          ItemsSource="{Binding ToStations}"
-                         SelectedIndex="{Binding SelectedToStationIdx,Mode=TwoWay}" />
+                         SelectedIndex="{Binding SelectedToStation,Mode=TwoWay}" />
             </Grid>
             
             <BoxView HeightRequest="1" BackgroundColor="Gray" />
@@ -64,20 +64,8 @@
                      IsVisible="{Binding IsDataComplete}" />
             <VerticalStackLayout IsVisible="{Binding IsDataComplete}"
                                  Spacing="12">
-                <VerticalStackLayout>
-                    <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}"
-                           FontSize="48" />
-                    <Label TextType="Html" FontSize="14">
-                        <Label.Text>
-                            <MultiBinding StringFormat="From &lt;b&gt;{0} {1}&lt;/b&gt; → &lt;b&gt;{2} {3}&lt;/b&gt;">
-                                <Binding Path="SelectedFromTransitLine" />
-                                <Binding Path="SelectedFromStationName" />
-                                <Binding Path="SelectedToTransitLine" />
-                                <Binding Path="SelectedToStationName" />
-                            </MultiBinding>
-                        </Label.Text>
-                    </Label>
-                </VerticalStackLayout>
+                <Label Text="{Binding StringFormat='{0:C}',Path=CalculatedFare}"
+                       FontSize="48" />
                 
                 <BoxView HeightRequest="1" BackgroundColor="Gray" />
 
@@ -85,16 +73,17 @@
                 <CollectionView ItemsSource="{Binding CalculatedPath}">
                     <CollectionView.Header>
                         <VerticalStackLayout>
-                            <Grid ColumnDefinitions="60,200,60" ColumnSpacing="8">
+                            <Grid ColumnDefinitions="60,*,60" ColumnSpacing="8">
                                 <Label Grid.Column="0" FontAttributes="Bold">Line</Label>
                                 <Label Grid.Column="1" FontAttributes="Bold">Station</Label>
-                                <Label Grid.Column="2" FontAttributes="Bold">Fare</Label>
+                                <Label Grid.Column="2" FontAttributes="Bold"
+                                       HorizontalTextAlignment="End">Fare</Label>
                             </Grid>
                         </VerticalStackLayout>
                     </CollectionView.Header>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="trainFareCalculator:Graph+PathComponent">
-                            <Grid ColumnDefinitions="60,200,60" ColumnSpacing="8" RowSpacing="8">
+                            <Grid ColumnDefinitions="60,*,60" ColumnSpacing="8" RowSpacing="8">
                                 <Label Grid.Column="0"
                                        Text="{Binding  Station.TransitLine}"/>
                                 <Label Grid.Column="1"

@@ -12,9 +12,9 @@ public partial class MainPageModel
     private Directory _directory;
     private Graph _graph;
 
-    private int _selectedFromTransitLineIdx = -1;
+    private int _selectedFromTransitLine = -1;
 
-    private int _selectedToTransitLineIdx = -1;
+    private int _selectedToTransitLine = -1;
     
     public async Task InitializeAsync()
     {
@@ -26,66 +26,58 @@ public partial class MainPageModel
 
     public List<string> TransitLines { get; set; }
 
-    public int SelectedFromTransitLineIdx
+    public int SelectedFromTransitLine
     {
-        get => _selectedFromTransitLineIdx;
+        get => _selectedFromTransitLine;
         set
         {
-            _selectedFromTransitLineIdx = value;
-            SelectedFromStationIdx = -1; // reset selected station when transit line changes
+            _selectedFromTransitLine = value;
+            SelectedFromStation = -1; // reset selected station when transit line changes
         }
     }
 
-    public string SelectedFromTransitLine { get; set; } = "";
-
-    public int SelectedToTransitLineIdx
+    public int SelectedToTransitLine
     {
-        get => _selectedToTransitLineIdx;
+        get => _selectedToTransitLine;
         set
         {
-            _selectedToTransitLineIdx = value;
-            SelectedToStationIdx = -1; // reset selected station when transit line changes
+            _selectedToTransitLine = value;
+            SelectedToStation = -1; // reset selected station when transit line changes
         }
     }
-
-    public string SelectedToTransitLine { get; set; } = "";
 
     public List<string> FromStations
     {
         get
         {
-            if (SelectedFromTransitLineIdx == -1)
+            if (SelectedFromTransitLine == -1)
                 return [];
 
             return _directory.Matrices
-                .First(m => m.TransitLine == _directory.Matrices[SelectedFromTransitLineIdx].TransitLine)
+                .First(m => m.TransitLine == _directory.Matrices[SelectedFromTransitLine].TransitLine)
                 .Stations
                 .Select(s => s.Name)
                 .ToList();
         }
     }
 
-    public int SelectedFromStationIdx { get; set; } = -1;
-    public string SelectedFromStationName { get; set; } = "";
-
+    public int SelectedFromStation { get; set; } = -1;
     public List<string> ToStations
     {
         get
         {
-            if (SelectedToTransitLineIdx == -1)
+            if (SelectedToTransitLine == -1)
                 return [];
 
             return _directory.Matrices
-                .First(m => m.TransitLine == _directory.Matrices[SelectedToTransitLineIdx].TransitLine)
+                .First(m => m.TransitLine == _directory.Matrices[SelectedToTransitLine].TransitLine)
                 .Stations
                 .Select(s => s.Name)
                 .ToList();
         }
     }
 
-    public int SelectedToStationIdx { get; set; } = -1;
-    public string SelectedToStationName { get; set; } = "";
-
+    public int SelectedToStation { get; set; } = -1;
     public bool IsStoredValueCard { get; set; } = true;
     public bool IsDiscounted { get; set; }
 
@@ -122,22 +114,17 @@ public partial class MainPageModel
     }
 
     public bool IsDataComplete =>
-        SelectedFromTransitLineIdx != -1 &&
-        SelectedToTransitLineIdx != -1 &&
-        SelectedFromStationIdx != -1 &&
-        SelectedToStationIdx != -1;
+        SelectedFromTransitLine != -1 &&
+        SelectedToTransitLine != -1 &&
+        SelectedFromStation != -1 &&
+        SelectedToStation != -1;
     
     private Graph.Paths CalculateFare()
     {
-        var fromTl = _directory.Matrices[SelectedFromTransitLineIdx];
-        var toTl = _directory.Matrices[SelectedToTransitLineIdx];
-        var fromStation = fromTl.Stations[SelectedFromStationIdx];
-        var toStation = toTl.Stations[SelectedToStationIdx];
-
-        SelectedFromTransitLine = fromTl.TransitLine;
-        SelectedFromStationName = fromStation.Name;
-        SelectedToTransitLine = toTl.TransitLine;
-        SelectedToStationName = toStation.Name;
+        var fromTl = _directory.Matrices[SelectedFromTransitLine];
+        var toTl = _directory.Matrices[SelectedToTransitLine];
+        var fromStation = fromTl.Stations[SelectedFromStation];
+        var toStation = toTl.Stations[SelectedToStation];
 
         var paths = _graph.FindShortestPaths(
             new Station(fromStation.TransitLine, fromStation.Code, fromStation.Name),
