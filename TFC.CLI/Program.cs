@@ -138,7 +138,7 @@ internal class Program
 
         Console.WriteLine($"Total Fare: {path.Total:C}");
         Console.WriteLine("Path:");
-        Console.WriteLine($"- {string.Join(" -> ", path.Path)}");
+        Console.WriteLine($"- {string.Join(" -> ", path.Path.Select(p => $"{p.Station.TransitLine} {p.Station.Name} ({p.Fare})"))}");
 
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey();
